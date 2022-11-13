@@ -4,16 +4,22 @@ description: Run workspaces on a Docker host with variables.
 tags: [local, docker]
 ---
 
-# docker
+# docker-vars
 
-To get started, run `coder templates init`. When prompted, select this template.
-Follow the on-screen instructions to proceed.
+To get started, run `coder templates create docker-var`. 
 
-## code-server
+## DIND（Docker in Docker）
 
-`code-server` is installed via the `startup_script` argument in the `coder_agent`
-resource block. The `coder_app` resource is defined to access `code-server` through
-the dashboard UI over `localhost:13337`.
+Docs: <https://coder.com/docs/coder-oss/latest/templates/docker-in-docker>
+
+### Sysbox runtime 
+
+1. Install sysbox runc to replace docker runc: <https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install.md>
+2. Then we can run dockerd in container.
+
+### Privileged sidecar container 
+
+While less secure, you can attach a privileged container to your templates. This may come in handy if your nodes cannot run Sysbox.
 
 ## Additional variables
 
@@ -35,6 +41,8 @@ This template has the following predefined parameters:
   > `docker context ls`.
 - `docker_arch`: Architecture of the host running Docker.
   This can be `amd64`, `arm64`, or `armv7`.
+
+## Docker support.
 
 ### Todo
 

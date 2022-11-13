@@ -20,6 +20,16 @@ provider "docker" {
 data "coder_workspace" "me" {
 }
 
+variable "dockerd_enabled" {
+  description = <<-EOF
+  Start dockerd. (optional)
+
+  Need dind supported.
+  EOF
+
+  default = "false"
+}
+
 variable "dotfiles_uri" {
   description = <<-EOF
   Dotfiles repo URI (optional)
@@ -35,9 +45,11 @@ variable "image" {
   Container images from coder-com
 
   EOF
-  default = "codercom/enterprise-golang:ubuntu"
+  default = "ninehills/coder-base:latest"
   validation {
     condition = contains([
+      "ninehills/coder-golang:latest",
+      "ninehills/coder-base:latest",
       "codercom/enterprise-node:ubuntu",
       "codercom/enterprise-golang:ubuntu",
       "codercom/enterprise-java:ubuntu",
@@ -45,7 +57,7 @@ variable "image" {
       "marktmilligan/clion-rust:latest"
     ], var.image)
     error_message = "Invalid image!"   
-}  
+  }  
 }
 
 variable "repo" {
@@ -56,21 +68,12 @@ variable "repo" {
   default = ""
 }
 
-variable "extension" {
-  description = "VS Code extension"
-  default     = "golang.go"
-  validation {
-    condition = contains([
-      "rust-lang.rust",
-      "eg2.vscode-npm-script",
-      "matklad.rust-analyzer",
-      "ms-python.python",
-      "ms-toolsai.jupyter",
-      "redhat.java",
-      "golang.go"
-    ], var.extension)
-    error_message = "Invalid VS Code extension!"  
-}
+variable "http_proxy" {
+  description = <<-EOF
+  HTTP(S) Proxy, default is host.docker.internal:7890.
+
+  EOF
+  default = "http://host.docker.internal:7890"
 }
 
 
@@ -82,26 +85,38 @@ resource "coder_agent" "main" {
     set -eu
 
     # set proxy
-    export https_proxy=http://host.docker.internal:7890 http_proxy=http://host.docker.internal:7890
+    if [[ "${var.http_proxy}" != "" ]];then
+      echo "Set http(s) proxy to ${var.http_proxy}"
+      export https_proxy="${var.http_proxy}" http_proxy="${var.http_proxy}"
+    fi
 
     # clone repo
     if [[ "${var.repo}" != "" ]];then
+      echo "Clone repo ${var.repo} ..."
       mkdir -p ~/.ssh
       ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
       git clone ${var.repo}
     fi
 
-    # install code-server
-    curl -fsSL https://code-server.dev/install.sh | sh
+    # install code-server if not in image.
+    if ! which code-server ; then
+      echo "Install code-server..."
+      curl -fsSL https://code-server.dev/install.sh | sh
+    fi
+
     code-server --auth none --port 13337 &
 
     # use coder CLI to clone and install dotfiles
     if [[ "${var.dotfiles_uri}" != "" ]];then
+      echo "Install dotfiles..."
       coder dotfiles -y ${var.dotfiles_uri}
     fi
 
-    # install VS Code extension into code-server
-    SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension ${var.extension}
+    # start dockerd
+    if [[ "${var.dockerd_enabled}" == "true" ]];then
+      echo "Start dockerd..."
+      sudo dockerd &
+    fi
     EOF
 
   # These environment variables allow you to make Git commits right away after creating a
@@ -134,6 +149,9 @@ resource "coder_app" "code-server" {
 
 resource "docker_volume" "coder_volume" {
   name = "coder-${data.coder_workspace.me.id}-${lower(data.coder_workspace.me.name)}"
+  # https://coder.com/docs/coder-oss/latest/templates/resource-persistence#-bulletproofing
+  # Every container has owner volume, so dont need to set ignore_changes = all
+
   # Add labels in Docker to keep track of orphan resources.
   labels {
     label = "coder.owner"
@@ -158,6 +176,8 @@ resource "docker_volume" "coder_volume" {
 resource "docker_container" "workspace" {
   count = data.coder_workspace.me.start_count
   image = "${var.image}"
+  # Use sysbox-run as runtime to support dind.
+  runtime = "sysbox-runc"
   # Uses lower() to avoid Docker restriction on container names.
   name = "coder-${data.coder_workspace.me.owner}-${lower(data.coder_workspace.me.name)}"
   # Hostname makes the shell more user friendly: coder@my-workspace:~$

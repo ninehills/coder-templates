@@ -68,6 +68,14 @@ variable "repo" {
   default = ""
 }
 
+variable "work_dir" {
+  description = <<-EOF
+  Work dir will be /home/coder/<work_dir>.
+
+  EOF
+  default = ""
+}
+
 variable "http_proxy" {
   description = <<-EOF
   HTTP(S) Proxy, default is host.docker.internal:7890.
@@ -95,7 +103,7 @@ resource "coder_agent" "main" {
       echo "Clone repo ${var.repo} ..."
       mkdir -p ~/.ssh
       ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
-      git clone ${var.repo}
+      git clone ${var.repo} ${var.work_dir}
     fi
 
     # install code-server if not in image.
@@ -135,7 +143,7 @@ resource "coder_app" "code-server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
   display_name = "code-server"
-  url          = "http://localhost:13337/?folder=/home/coder"
+  url          = "http://localhost:13337/?folder=/home/coder/${var.work_dir}"
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"

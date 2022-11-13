@@ -46,6 +46,6 @@ This template has the following predefined parameters:
 
 ### Todo
 
-- [ ] If clone repo from remote, set coder-server default folder as `/home/coder/<repo>`.
-- [ ] Use custom code-server images to replace default images.
-- [ ] Set VSCode Settings Sync. <https://coder.com/docs/code-server/latest/FAQ#how-can-i-reuse-my-vs-code-configuration>
+- [x] If clone repo from remote, set coder-server default folder as `/home/coder/<repo>`.
+- [x] Use custom code-server images to replace default images.
+- [ ] VSCode settings sync.

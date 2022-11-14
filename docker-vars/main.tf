@@ -22,20 +22,24 @@ data "coder_workspace" "me" {
 
 variable "dockerd_enabled" {
   description = <<-EOF
-  Start dockerd. (optional)
-
-  Need dind supported.
+  Is start dockerd. (optional, and need dind supported)
   EOF
 
   default = "false"
+  validation {
+    condition = contains([
+      "false",
+      "true"
+    ], var.dockerd_enabled)
+    error_message = "Invalid dockerd_enabled!"   
+  } 
 }
 
 variable "dotfiles_uri" {
   description = <<-EOF
   Dotfiles repo URI (optional)
 
-  see https://dotfiles.github.io
-  example: git@github.com:ninehills/dotfiles.git
+  eg: git@github.com:ninehills/dotfiles.git
   EOF
 
   default = ""
@@ -217,5 +221,22 @@ resource "docker_container" "workspace" {
   labels {
     label = "coder.workspace_name"
     value = data.coder_workspace.me.name
+  }
+}
+
+resource "coder_metadata" "container_info" {
+  count       = data.coder_workspace.me.start_count
+  resource_id = docker_container.workspace[0].id
+  item {
+    key   = "starts"
+    value = "${data.coder_workspace.me.start_count}"
+  }
+  item {
+    key   = "image"
+    value = "${var.image}"
+  }
+  item {
+    key   = "repo"
+    value = "${var.repo}"
   }
 }

@@ -23,10 +23,13 @@ While less secure, you can attach a privileged container to your templates. This
 
 ## Additional variables
 
-- `dotfiles_url`: Prompt user and clone/install a dotfiles repository (for personalization settings)
+- `dockerd_enabled`: Prompt user for enable dockerd in container
+- `dotfiles_uri`: Prompt user and clone/install a dotfiles repository (for personalization settings)
 - `image`: Prompt user for container image to use
 - `repo`: Prompt user for repo to clone
-- `extension`: Prompt user for which VS Code extension to install from the Open VSX marketplace
+- `work_dir`: Prompt user for workspace directory
+- `http_proxy`: Prompt user for http(s) proxy
+
 
 ## Supported Parameters
 

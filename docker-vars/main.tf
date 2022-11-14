@@ -35,6 +35,7 @@ variable "dotfiles_uri" {
   Dotfiles repo URI (optional)
 
   see https://dotfiles.github.io
+  example: git@github.com:ninehills/dotfiles.git
   EOF
 
   default = ""
@@ -51,9 +52,7 @@ variable "image" {
       "ninehills/coder-golang:latest",
       "ninehills/coder-base:latest",
       "codercom/enterprise-node:ubuntu",
-      "codercom/enterprise-golang:ubuntu",
       "codercom/enterprise-java:ubuntu",
-      "codercom/enterprise-base:ubuntu",
       "marktmilligan/clion-rust:latest"
     ], var.image)
     error_message = "Invalid image!"   

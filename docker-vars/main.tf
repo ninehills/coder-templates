@@ -102,7 +102,7 @@ resource "coder_agent" "main" {
       echo "Clone repo ${var.repo} ..."
       mkdir -p ~/.ssh
       ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
-      git clone ${var.repo} ${var.work_dir}
+      git clone ${var.repo} ${var.work_dir} || echo "ignore clone failed"
     fi
 
     # install code-server if not in image.

@@ -99,6 +99,7 @@ resource "coder_agent" "main" {
     if [[ "${var.http_proxy}" != "" ]];then
       echo "Set http(s) proxy to ${var.http_proxy}"
       export https_proxy="${var.http_proxy}" http_proxy="${var.http_proxy}"
+      export no_proxy="127.0.0.1,localhost,10.,192.168.,172."
     fi
 
     # clone repo
@@ -227,10 +228,6 @@ resource "docker_container" "workspace" {
 resource "coder_metadata" "container_info" {
   count       = data.coder_workspace.me.start_count
   resource_id = docker_container.workspace[0].id
-  item {
-    key   = "starts"
-    value = "${data.coder_workspace.me.start_count}"
-  }
   item {
     key   = "image"
     value = "${var.image}"
